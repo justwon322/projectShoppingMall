@@ -1,0 +1,29 @@
+<!-- 헤더 템플릿 불러오기 admin폴더이므로 한단계 올라가야하므로 ..임 -->
+<% include ../header.ejs %>
+    <!--<%= products %>-->
+    <table class="table table-bordered table-hover">
+        <tr>
+            <th>제목</th>
+            <th>작성일</th>
+            <th>삭제</th>
+        </tr>
+        <% products.forEach( function(products){ %>
+        <tr>
+            <td>
+                <a href="/admin/products/detail/<%=products.id%>" >
+                    <%=products.name%>
+                </a>
+            </td>
+            <td>
+                    <%=products.getDate.year%>-<%=products.getDate.month%>-<%=products.getDate.day%>
+            </td>
+            <td>
+                <a href="#" class="btn btn-danger">삭제</a>
+            </td>
+        </tr>
+        <%});%>
+    </table>
+
+    <a href="/admin/products/write" class="btn btn-default">작성하기</a>
+
+<% include ../footer.ejs %>
