@@ -5,7 +5,11 @@ var autoIncrement = require('mongoose-auto-increment');
 //생성될 필드명을 정한다.
 // 스키마가 없어서 정해주는게 좋다
 var ProductsSchema = new Schema({
-    name : String, //제품명
+    name : {
+        type : String, //제품명
+        required : [true, '제목을 입력해주세요']    
+    },
+    thumbnail : String, //이미지파일명
     price : Number, //가격
     description : String, //설명
     created_at : { //작성일

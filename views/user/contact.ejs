@@ -1,0 +1,26 @@
+<!-- 헤더 템플릿 불러오기 admin폴더이므로 한단계 올라가야하므로 ..임 -->
+<% include ../header.ejs %>
+
+    <table class="table table-bordered table-hover">
+        <tr>
+            <th>제목</th>
+            <th>삭제</th>
+        </tr>
+        <% contact.forEach( function(contact){ %>
+        <tr>
+            <td>
+                <a href="/user/contact/detail/<%=contact.id%>" >
+                    <%=contact.name%>
+                </a>
+            </td>
+            
+            <td>
+                <a href="/user/contact/delete/<%=contact.id%>" class="btn btn-danger" onclick="return confirm('삭제하시겠습니까?')">삭제</a>
+            </td>
+        </tr>
+        <%});%>
+    </table>
+
+    <a href="/user/contact/write" class="btn btn-default">작성하기</a>
+
+<% include ../footer.ejs %>

@@ -1,6 +1,6 @@
 <!-- 헤더 템플릿 불러오기 admin폴더이므로 한단계 올라가야하므로 ..임 -->
 <% include ../header.ejs %>
-    <!--<%= products %>-->
+
     <table class="table table-bordered table-hover">
         <tr>
             <th>제목</th>
@@ -18,7 +18,7 @@
                     <%=products.getDate.year%>-<%=products.getDate.month%>-<%=products.getDate.day%>
             </td>
             <td>
-                <a href="#" class="btn btn-danger">삭제</a>
+                <a href="/admin/products/delete/<%=products.id%>" class="btn btn-danger" onclick="return confirm('삭제하시겠습니까?')">삭제</a>
             </td>
         </tr>
         <%});%>

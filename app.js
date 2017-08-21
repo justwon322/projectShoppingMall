@@ -7,6 +7,7 @@ var logger = require('morgan');
 var bodyParser = require('body-parser');
 var express = require('express');
 var path = require('path');
+var cookieParser = require('cookie-parser');
 //MongoDB 접속
 /*
     desc : 몽고 디비 접속 은 라우팅 위에 (규칙)
@@ -28,7 +29,7 @@ var connect = mongoose.connect('mongodb://127.0.0.1:27017/fastcampus'// DB접속
 autoIncrement.initialize(connect);
 
 var admin = require('./routes/admin');
-
+var user = require('./routes/user');
 var app = express();
 var port = 3000;
 
@@ -42,9 +43,13 @@ app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
 
 // 미들웨어 셋팅
+// bodyparser >> 폼에서 넘어온 값들을 자바스크립트객체로 변환
 app.use(logger('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
+app.use(cookieParser());
+
+app.use('/uploads',express.static('uploads'));
 
 app.get('/', function(req,res){
     res.send('first app!');
@@ -53,6 +58,9 @@ app.get('/', function(req,res){
 //라우팅
 //어드민으로 요청이 들어오면 어드민모듈이 요청처리
 app.use('/admin',admin);
+
+app.use('/user',user);
+
 
 app.listen( port, function(){
     console.log('Express listening on port', port);

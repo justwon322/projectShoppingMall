@@ -9,11 +9,108 @@
                 작성일 : <%=product.getDate.year%>-<%=product.getDate.month%>-<%=product.getDate.day%>
             </div>
             <%=product.description%>
+            <% if(product.thumbnail){%>
+                <p>
+                    <img src="/uploads/<%=product.thumbnail%>" alt="">
+                </p>
+            <% } %>
+            <!-- 댓글영역  -->
+            <hr/>
+            <!-- ajax로 댓글작성시마다 append 시켜줌 -->
+            <div id="comment_area">
+                <% comments.forEach( function(comments){ %>
+                    <div>
+                         <%=comments.content%>
+                        ( <a class='comment_delete' comment_id='<%=comments.id%>'>삭제</a> ) 
+                    </div>
+                <% }); %>
+            </div>
+            <div>
+                댓글작성하기
+                <form id="commentForm" action="" method="post">
+                    <input type="hidden" name="product_id" value="<%=product.id%>" />
+                    <textarea class="form-control" name="content"></textarea>
+                    <button class="btn btn-primary" style="margin-top: 10px">댓글작성</button>
+                </form>
+            </div>
+            <!-- 댓글영역  -->
         </div>
     </div>
 
     <a href="/admin/products" class="btn btn-default">목록으로</a>
     <a href="/admin/products/edit/<%=product.id%>" class="btn btn-primary">수정</a>
+    
 
+    <script>
+        //외부변수 영향 받지않게 하기위해 감싸줌 scope
+        (function(){
+            $(document).ready(function() {
+                $('#commentForm').submit(function(){
+                    var $contentVal = $(this).children('textarea[name=content]').val();
+                    if($contentVal){
+                        $.ajax({
+                            url: '/admin/products/ajax_comment/insert',
+                            type: 'POST',
+                            data: $(this).serialize(),
+                        })
+                        .done(function(args) {
+                            console.log(args.message);
+                            if(args.message === "success"){
+                                $('#comment_area').append(
+                                    '<div>' 
+                                    + args.content 
+                                    + " ( <a class='comment_delete' comment_id='"
+                                    + args.id
+                                    + "'>삭제</a> )" 
+                                    + '</div>'
+                                )     
+                            };
+
+                            // 댓글입력하면 append 후 댓글란 값비워줌
+                            // $('#comment_area').append(
+                            //     '<div>' + args.content + '</div>'
+                            // );
+                            $('textarea[name=content]').val("");
+                        })
+                        .fail(function(args) {
+                            console.log(args);
+                        });
+                        
+                    }else{
+                        alert('댓글 내용을 입력해주세요.')
+                    }
+                    return false;
+                });
+            });
+        })();
+
+        /**
+            댓글삭제
+        **/
+        $(document).on('click','.comment_delete', function(){
+            if(confirm('삭제?')){
+                var $self = $(this);
+                $.ajax({
+                    url : '/admin/products/ajax_comment/delete',
+                    type : 'POST',
+                    data : { comment_id : $self.attr('comment_id' )},//admin.js로 comment_id로 변수명을 지정해서 보내줌
+                })
+                .done(function(){
+                    //여기서 this 는 외부 부모함수가 아닌 내부함수자체를 this로 보기때문에 this.parent가 없음
+                    //그래서 위에서 self로 this(.comment_delete 엘리먼트)를 미리 받아놓고 자식함수에서 쓸수있게끔 선언해 주는거
+                    $self.parent().remove();
+                    alert("삭제됨");
+                })
+                .fail(function(args){
+                    console.log(args);
+                })
+
+                
+            }
+
+        });
+
+
+    </script>
     
 <% include ../footer.ejs %>
