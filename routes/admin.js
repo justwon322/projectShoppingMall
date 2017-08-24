@@ -111,7 +111,9 @@ router.post('/products/edit/:id', upload.single('thumbnail') ,function(req, res)
     //넣을 변수 값을 셋팅한다
     ProductsModel.findOne( {id:req.params.id},function(err,product){
 
-    
+        if(req.file && product.thumbnail){//DB에 그전 파일명으로 조회했을때 있어야함
+            fs.unlinkSync(uploadDir + '/' + product.thumbnail);
+        }
         var query = {   
             name : req.body.name,
             //요청이 있으면 요청파일명 없으면 그전의 파일명 조회후 그 파일명

@@ -1,13 +1,21 @@
 /*
 */
+
+
+var express = require('express');
+var path = require('path');
 // logging 처리위한 npm module
 var logger = require('morgan');
 //bodyParser : form 에서 넘어온 객체를
 //javascript 객체로 매핑
 var bodyParser = require('body-parser');
-var express = require('express');
-var path = require('path');
 var cookieParser = require('cookie-parser');
+//flash  메시지 관련
+var flash = require('connect-flash');
+//passport 로그인 관련
+var passport = require('passport');
+var session = require('express-session');
+
 //MongoDB 접속
 /*
     desc : 몽고 디비 접속 은 라우팅 위에 (규칙)
@@ -29,7 +37,10 @@ var connect = mongoose.connect('mongodb://127.0.0.1:27017/fastcampus'// DB접속
 autoIncrement.initialize(connect);
 
 var admin = require('./routes/admin');
+var accounts = require('./routes/accounts');
 var user = require('./routes/user');
+var auth = require('./routes/auth');
+
 var app = express();
 var port = 3000;
 
@@ -49,19 +60,43 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
 
-app.use('/uploads',express.static('uploads'));
 
-app.get('/', function(req,res){
-    res.send('first app!');
-});
+//업로드 path 추가
+app.use('/uploads', express.static('uploads'));
+//session 관련 셋팅
+app.use(session({
+    secret: 'fastcampus',// 쿠키 임의변조 방지용 salt랑 같은개념으로보면될듯
+    resave: false,
+    saveUninitialized: true,
+    cookie: {
+      maxAge: 2000 * 60 * 60 //지속시간 2시간
+    }
+}));
+
+//passport 적용
+app.use(passport.initialize());
+app.use(passport.session());
+
+//플래시 메시지 관련
+app.use(flash());
+//라우터 위에 둬야함 라우팅이 뜨기 전에 되버리면 안됨 
+//로그인 정보 뷰에서만 변수로 셋팅, 전체 미들웨어는 router위에 두어야 에러가 안난다
+app.use(function(req, res, next) {
+    app.locals.isLogin = req.isAuthenticated();//passport 이니셜라이징 한뒤로 req에 포함
+    //app.locals.urlparameter = req.url; //현재 url 정보를 보내고 싶으면 이와같이 셋팅
+    //app.locals.userData = req.user; //사용 정보를 보내고 싶으면 이와같이 셋팅
+    next();
+  });
 
 //라우팅
 //어드민으로 요청이 들어오면 어드민모듈이 요청처리
+app.get('/', function(req,res){
+    res.send('first app');
+});
 app.use('/admin',admin);
-
+app.use('/accounts',accounts);
 app.use('/user',user);
-
-
+app.use('/auth',auth);
 app.listen( port, function(){
     console.log('Express listening on port', port);
 });
