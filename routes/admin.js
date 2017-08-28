@@ -8,6 +8,7 @@ var router = express.Router();
 var ProductsModel = require('../models/ProductsModel');
 // comments 
 var CommentsModel = require('../models/CommentsModel');
+var loginRequired = require('../libs/loginRequired');
 // 
 var csrf = require('csurf');
 var csrfProtection = csrf({ cookie: true });
@@ -44,7 +45,7 @@ function testMiddleWare(req,res,next){
     // }
 }
 
-router.get('/products',testMiddleWare,function(req,res){
+router.get('/products',function(req,res){
     ProductsModel.find(function (err,products) {
         res.render('admin/products',
             { products : products} 
@@ -57,12 +58,12 @@ router.get('/products',testMiddleWare,function(req,res){
 //module.exports
 //요청이 /(어드민)/products/write 로오면
 // admin 폴더밑에 form.ejs 를 보내라 라는뜻
-router.get('/products/write', csrfProtection , function (req,res) { 
+router.get('/products/write', loginRequired,csrfProtection , function (req,res) { 
     //여기서 products 선언안하면 form.ejs에서 수정하기때 가져오려고했던 값때문에 선언안됬다고 에러남
     res.render('admin/form', { product : "" , csrfToken : req.csrfToken() });
  });
 // 저장할때 타입에 맞지않으면 저장안됨 (로그가안남네..?)
-router.post('/products/write',upload.single('thumbnail'), csrfProtection ,function(req,res){
+router.post('/products/write',loginRequired,upload.single('thumbnail'), csrfProtection ,function(req,res){
     //multer의 정보를 다저장
     console.log(req.file);
     var product = new ProductsModel({
@@ -70,6 +71,7 @@ router.post('/products/write',upload.single('thumbnail'), csrfProtection ,functi
         thumbnail : (req.file)?req.file.filename : "",
         price : req.body.price,
         description : req.body.description,
+        username : req.user.username // req.user에 passport에 받아온 username이 모두 저장되어있다.
     });
     var validationError = product.validateSync();
     if(validationError){
@@ -80,7 +82,6 @@ router.post('/products/write',upload.single('thumbnail'), csrfProtection ,functi
         });
     }
 });
-
 
 //상세페이지
 router.get('/products/detail/:id' , csrfProtection ,function(req, res){
@@ -95,7 +96,7 @@ router.get('/products/detail/:id' , csrfProtection ,function(req, res){
 });
 
 //상세페이지
-router.get('/products/edit/:id' ,csrfProtection, function(req, res){
+router.get('/products/edit/:id' ,loginRequired,csrfProtection, function(req, res){
     
     
     
@@ -129,7 +130,7 @@ router.post('/products/edit/:id', upload.single('thumbnail') ,function(req, res)
     });
 });
 
-router.get('/products/delete/:id', function(req, res){
+router.get('/products/delete/:id',loginRequired,function(req, res){
     ProductsModel.remove({ id : req.params.id }, function(err){
         res.redirect('/admin/products');
     });
