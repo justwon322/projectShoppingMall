@@ -16,6 +16,7 @@
             crossorigin="anonymous"></script>
             <!--bootstrap js 추가 -->
     <script type="text/javascript" src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="/static/common.js"></script>
 </head>
 <body>
     <div class="container" style="padding-top:100px;">
@@ -36,13 +37,20 @@
                         <li class="active">
                             <a href="/">Home</a>
                         </li>
-                        <li><a href="/admin/products">ADMIN</a></li>
+                        <% if(typeof(userData)!=='undefined' && userData.username==='admin'){%>
+                            <li><a href="/admin/products">ADMIN</a></li>
+                        <%}%>
+                        <li><a href="/chat">CHAT</a></li>
+                        <li><a href="/cart">CART</a></li>
                         <% if(isLogin){%>
                             <li><a href="/accounts/logout" onclick="return confirm('로그아웃 하시겠습니까?')">LOGOUT</a></li>
                         <%}else{%>
                             <li><a href="/accounts/join">JOIN</a></li> 
                             <li><a href="/accounts/login">LOGIN</a></li>  
                         <%}%>
+                    </ul>
+                    <ul class="nav navbar-nav navbar-right">
+                        <li><a href="/checkout/nomember">구매조회</a></li> 
                     </ul> 
                 </div> 
             </div> 

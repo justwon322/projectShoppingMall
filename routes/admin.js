@@ -8,11 +8,12 @@ var router = express.Router();
 var ProductsModel = require('../models/ProductsModel');
 // comments 
 var CommentsModel = require('../models/CommentsModel');
-var loginRequired = require('../libs/loginRequired');
+var CheckoutModel = require('../models/CheckoutModel');
+var adminRequired = require('../libs/adminRequired');
 // 
 var csrf = require('csurf');
 var csrfProtection = csrf({ cookie: true });
-
+var co = require('co');
 //이미지 저장되는 위치 설정
 var path = require('path');
 var uploadDir = path.join( __dirname , '../uploads' ); //uploads경로가 최상위 shopping에서 두단계 아래이므로 루트의 uploads위치에 저장한다.
@@ -34,7 +35,7 @@ var upload = multer({ storage: storage });
 //res.render
 //res.send
 //경로가 admin이 최상위 경로임
-router.get('/',function(req,res){
+router.get('/',adminRequired,function(req,res){
     res.send('admin app'); 
 });
 // 미들웨어 get에 넣으면 중간 미들웨어 함수가 작동하고 통과할때만 다음 콜백 함수로 넘어감
@@ -45,25 +46,30 @@ function testMiddleWare(req,res,next){
     // }
 }
 
-router.get('/products',function(req,res){
-    ProductsModel.find(function (err,products) {
-        res.render('admin/products',
-            { products : products} 
-            
-            //DB에서 받은 products 를 products 변수명으로 내보냄
-        );
-    });
+router.get('/products',adminRequired,function(req,res){
+    if(!req.isAuthenticated()){
+        res.send('<script>alert("로그인이 필요한 서비스입니다.");location.href="/accounts/login";</script>');
+    }else{
+        ProductsModel.find(function (err,products) {
+            res.render('admin/products',
+                { products : products} 
+                
+                //DB에서 받은 products 를 products 변수명으로 내보냄
+            );
+        });
+    }
+    
     
 });
 //module.exports
 //요청이 /(어드민)/products/write 로오면
 // admin 폴더밑에 form.ejs 를 보내라 라는뜻
-router.get('/products/write', loginRequired,csrfProtection , function (req,res) { 
+router.get('/products/write', adminRequired,csrfProtection , function (req,res) { 
     //여기서 products 선언안하면 form.ejs에서 수정하기때 가져오려고했던 값때문에 선언안됬다고 에러남
     res.render('admin/form', { product : "" , csrfToken : req.csrfToken() });
  });
 // 저장할때 타입에 맞지않으면 저장안됨 (로그가안남네..?)
-router.post('/products/write',loginRequired,upload.single('thumbnail'), csrfProtection ,function(req,res){
+router.post('/products/write',adminRequired,upload.single('thumbnail'), csrfProtection ,function(req,res){
     //multer의 정보를 다저장
     console.log(req.file);
     var product = new ProductsModel({
@@ -84,7 +90,7 @@ router.post('/products/write',loginRequired,upload.single('thumbnail'), csrfProt
 });
 
 //상세페이지
-router.get('/products/detail/:id' , csrfProtection ,function(req, res){
+router.get('/products/detail/:id',adminRequired , csrfProtection ,function(req, res){
     //url 에서 변수 값을 받아올떈 req.params.id 로 받아온다
     ProductsModel.findOne( { 'id' :  req.params.id } , function(err ,product){
         //제품정보를 받고 그안에서 댓글을 받아온다.
@@ -96,7 +102,7 @@ router.get('/products/detail/:id' , csrfProtection ,function(req, res){
 });
 
 //상세페이지
-router.get('/products/edit/:id' ,loginRequired,csrfProtection, function(req, res){
+router.get('/products/edit/:id' ,adminRequired,csrfProtection, function(req, res){
     
     
     
@@ -107,7 +113,7 @@ router.get('/products/edit/:id' ,loginRequired,csrfProtection, function(req, res
     });
 });
 
-router.post('/products/edit/:id', upload.single('thumbnail') ,function(req, res){
+router.post('/products/edit/:id',adminRequired, upload.single('thumbnail') ,function(req, res){
     
     //넣을 변수 값을 셋팅한다
     ProductsModel.findOne( {id:req.params.id},function(err,product){
@@ -130,14 +136,22 @@ router.post('/products/edit/:id', upload.single('thumbnail') ,function(req, res)
     });
 });
 
-router.get('/products/delete/:id',loginRequired,function(req, res){
-    ProductsModel.remove({ id : req.params.id }, function(err){
-        res.redirect('/admin/products');
+router.get('/products/detail/:id',adminRequired , function(req, res){
+    var getData = co(function* (){
+        var product = yield ProductsModel.findOne( { 'id' :  req.params.id }).exec();
+        var comments = yield CommentsModel.find( { 'product_id' :  req.params.id }).exec();
+        return {
+            product : product,
+            comments : comments
+        };
+    });
+    getData.then( function(result){
+        res.render('admin/productsDetail', { product: result.product , comments : result.comments });
     });
 });
 
 // ajax 라우팅
-router.post('/products/ajax_comment/insert', function(req,res){
+router.post('/products/ajax_comment/insert',adminRequired, function(req,res){
     var comment = new CommentsModel({
         content : req.body.content,
         product_id : parseInt(req.body.product_id)
@@ -152,12 +166,78 @@ router.post('/products/ajax_comment/insert', function(req,res){
 
 });
 
-router.post('/products/ajax_comment/delete', function(req,res){
+router.post('/products/ajax_comment/delete',adminRequired, function(req,res){
    
     CommentsModel.remove({id : req.body.comment_id }, function(err){
         res.json({ message : "success" });
     });
 
 });
+
+
+router.post('/products/ajax_summernote', adminRequired, upload.single('thumbnail'), function(req,res){
+    res.send( '/uploads/' + req.file.filename);
+});
+
+router.get('/order', adminRequired,function(req,res){
+    CheckoutModel.find( function(err, orderList){ //첫번째 인자는 err, 두번째는 받을 변수명
+        res.render( 'admin/orderList' , 
+            { orderList : orderList }
+        );
+    });
+});
+router.get('/order/edit/:id',adminRequired, function(req,res){
+    CheckoutModel.findOne( { id : req.params.id } , function(err, order){
+        res.render( 'admin/orderForm' , 
+            { order : order }
+        );
+    });
+});
+router.post('/order/edit/:id', adminRequired, function(req,res){
+    var query = {
+        status : req.body.status,
+        song_jang : req.body.song_jang
+    };
+
+    CheckoutModel.update({ id : req.params.id }, { $set : query }, function(err){
+        res.redirect('/admin/order');
+    });
+});
+router.get('/statistics', adminRequired, function(req,res){
+    CheckoutModel.find( function(err, orderList){ 
+
+        var barData = [];   // 넘겨줄 막대그래프 데이터 초기값 선언
+        var pieData = [];   // 원차트에 넣어줄 데이터 삽입
+        orderList.forEach(function(order){
+            // 08-10 형식으로 날짜를 받아온다
+            var date = new Date(order.created_at);
+            var monthDay = (date.getMonth()+1) + '-' + date.getDate();
+            
+            // 날짜에 해당하는 키값으로 조회
+            // 날짜별로 배열에 값 분기해서 넣음( 막대그래프는 날짜별 구매자 수이므로 )
+            if(monthDay in barData){ 
+                barData[monthDay]++; //있으면 더한다
+            }else{
+                barData[monthDay] = 1; //없으면 초기값 1넣어준다.
+            }
+
+            // 결재 상태를 검색해서 조회
+            // 해당 결제상태별로 분기처리해야하므로
+            if(order.status in pieData){
+                pieData[order.status]++; //있으면 더한다
+            }else{
+                pieData[order.status] = 1; //없으면 결재상태+1
+            }
+
+        });
+
+        res.render('admin/statistics' , { barData : barData , pieData:pieData });
+    });
+});
+
+
+
+
+
 
 module.exports = router;
