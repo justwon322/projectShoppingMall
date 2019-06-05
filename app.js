@@ -46,7 +46,7 @@ var chat = require('./routes/chat')
 var products = require('./routes/products');
 var cart = require('./routes/cart');
 var checkout = require('./routes/checkout');
-var app = express();
+var app = express();  
 var port = 3000;
 
 // 확장자가 ejs 로 끝나는 뷰 엔진을 추가한다.
