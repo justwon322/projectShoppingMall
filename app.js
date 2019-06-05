@@ -1,3 +1,8 @@
+/**
+ * Create_Date : 2017-08-??
+ * TO_DO : express app.js 모듈
+ * Version : v0.9 ( docker 모듈 빠져있음 )
+ */
 var express = require('express');
 var path = require('path');
 // logging 처리위한 npm module
@@ -44,7 +49,7 @@ var checkout = require('./routes/checkout');
 var app = express();
 var port = 3000;
 
-// 확장자가 ejs 로 끈나는 뷰 엔진을 추가한다.
+// 확장자가 ejs 로 끝나는 뷰 엔진을 추가한다.
 // 위치가 굉장히 중요
 // path.join 은 앞의경로(app.js의경로 최상단임)
 // 더하기 뒤의경로임
