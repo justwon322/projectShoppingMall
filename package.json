@@ -20,7 +20,7 @@
     "ejs": "^2.5.7",
     "express": "^4.15.3",
     "express-session": "^1.15.5",
-    "mongodb": "^2.2.30",
+    "mongodb": "^3.1.13",
     "mongoose": "^4.11.5",
     "mongoose-auto-increment": "^5.0.1",
     "morgan": "^1.8.2",
